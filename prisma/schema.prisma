@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  asin          String    @unique
+  slug          String    @unique
+  title         String
+  brand         String?
+  category      String
+  subCategory   String?
+  price         Float?
+  originalPrice Float?
+  currency      String    @default("USD")
+  rating        Float?
+  reviewCount   Int?
+  images        String[]
+  thumbnail     String?
+  description   String?   @db.Text
+  specs         Json?
+  features      String[]
+  affiliateUrl  String?
+  amazonUrl     String?
+  inStock       Boolean   @default(true)
+  verdictScore  Float?
+  verdictSummary String?  @db.Text
+  verdictPros   String[]
+  verdictCons   String[]
+  isFeatured    Boolean   @default(false)
+  isPublished   Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  reviews       Review[]
+  videos        Video[]
+  categories    CategoryProduct[]
+}
+
+model Review {
+  id            String    @id @default(cuid())
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  source        ReviewSource
+  authorName    String
+  authorLocation String?
+  authorAvatar  String?
+  rating        Float?
+  title         String?
+  body          String    @db.Text
+  sentimentScore Float?   // -1 to 1 (negative to positive)
+  isVerified    Boolean   @default(false)
+  isHelpful     Int       @default(0)
+  sourceUrl     String?
+  sourceDate    DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+enum ReviewSource {
+  AMAZON
+  REDDIT
+  YOUTUBE
+  EXPERT
+  MANUAL
+}
+
+model Video {
+  id          String    @id @default(cuid())
+  youtubeId   String    @unique
+  title       String
+  description String?   @db.Text
+  thumbnail   String?
+  channelName String
+  channelId   String
+  publishedAt DateTime?
+  viewCount   Int?
+  likeCount   Int?
+  duration    String?
+  
+  productId   String?
+  product     Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productAsin String?
+  
+  tags        String[]
+  isPublished Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  icon        String?
+  description String?
+  imageUrl    String?
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  
+  products    CategoryProduct[]
+}
+
+model CategoryProduct {
+  productId   String
+  categoryId  String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  
+  @@id([productId, categoryId])
+}
+
+model SiteSettings {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  value       String    @db.Text
+  updatedAt   DateTime  @updatedAt
+}
