@@ -3,15 +3,15 @@ import { cn } from '@/lib/utils';
 type Variant = 'default' | 'success' | 'warning' | 'danger' | 'muted' | 'amazon' | 'reddit' | 'youtube' | 'expert';
 
 const variants: Record<Variant, string> = {
-  default: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/25',
-  success: 'bg-green-500/15 text-green-400 border-green-500/25',
-  warning: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/25',
-  danger: 'bg-red-500/15 text-red-400 border-red-500/25',
-  muted: 'bg-gray-500/15 text-gray-400 border-gray-500/25',
-  amazon: 'bg-orange-500/15 text-orange-400 border-orange-500/25',
-  reddit: 'bg-red-500/15 text-red-400 border-red-500/25',
-  youtube: 'bg-red-600/15 text-red-400 border-red-600/25',
-  expert: 'bg-purple-500/15 text-purple-400 border-purple-500/25',
+  default: 'bg-[#EEF4FA] text-[#2D5986] border-[#CBDDF0]',
+  success: 'bg-[#EBF5EE] text-[#2A6B4A] border-[#C3E0CE]',
+  warning: 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]',
+  danger: 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]',
+  muted: 'bg-[#F5F6F4] text-[#5C5C5C] border-[#DDE1E6]',
+  amazon: 'bg-[#FFF7ED] text-[#9A3412] border-[#FDBA74]',
+  reddit: 'bg-[#FEF2F2] text-[#991B1B] border-[#FCA5A5]',
+  youtube: 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]',
+  expert: 'bg-[#F0FDF4] text-[#166534] border-[#86EFAC]',
 };
 
 interface BadgeProps {
@@ -24,7 +24,7 @@ export default function Badge({ children, variant = 'default', className }: Badg
   return (
     <span
       className={cn(
-        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border',
+        'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border',
         variants[variant],
         className
       )}

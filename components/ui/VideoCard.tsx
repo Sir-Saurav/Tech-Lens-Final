@@ -8,41 +8,30 @@ interface VideoCardProps {
   className?: string;
 }
 
-const channelColors: Record<string, string> = {
-  'Gadget Verse': 'bg-cyan-500/15 text-cyan-400',
-  'Tech Space': 'bg-blue-500/15 text-blue-400',
-  'Gadget Bits': 'bg-purple-500/15 text-purple-400',
-  'Gadget Adda': 'bg-green-500/15 text-green-400',
-  'Tech Buddie': 'bg-orange-500/15 text-orange-400',
-  'Tech States': 'bg-pink-500/15 text-pink-400',
-  'Lyrics Tope': 'bg-yellow-500/15 text-yellow-400',
-};
-
 export default function VideoCard({ video, className }: VideoCardProps) {
-  const channelColor = channelColors[video.channelName] || 'bg-gray-500/15 text-gray-400';
   const ytUrl = `https://www.youtube.com/watch?v=${video.youtubeId}`;
   const thumbnail = video.thumbnail || `https://img.youtube.com/vi/${video.youtubeId}/hqdefault.jpg`;
 
   return (
-    <div className={cn('group bg-[#111827] border border-white/8 rounded-2xl overflow-hidden hover:border-white/15 transition-all duration-300', className)}>
+    <div className={cn('group bg-white border border-[#DDE1E6] rounded overflow-hidden hover:border-[#BCC3CC] transition-all duration-200', className)}>
       {/* Thumbnail */}
-      <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="block relative aspect-video overflow-hidden bg-[#0d1526]">
+      <a href={ytUrl} target="_blank" rel="noopener noreferrer" className="block relative aspect-video overflow-hidden bg-[#F5F6F4]">
         <Image
           src={thumbnail}
           alt={video.title}
           fill
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
         {/* Play overlay */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="w-14 h-14 bg-red-600 rounded-full flex items-center justify-center shadow-lg shadow-red-600/40">
-            <Play className="w-6 h-6 text-white ml-1" fill="white" />
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center shadow-md">
+            <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
           </div>
         </div>
         {/* Duration badge */}
         {video.duration && (
-          <span className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded font-mono">
+          <span className="absolute bottom-2 right-2 bg-black/85 text-white text-[11px] px-1.5 py-0.5 rounded font-mono">
             {video.duration}
           </span>
         )}
@@ -51,29 +40,29 @@ export default function VideoCard({ video, className }: VideoCardProps) {
       {/* Content */}
       <div className="p-4">
         {/* Channel badge */}
-        <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium mb-2', channelColor)}>
-          <Play className="w-3 h-3" />
+        <div className="text-[11px] font-semibold text-[#2D5986] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
           {video.channelName}
-        </span>
+        </div>
 
         {/* Title */}
         <a href={ytUrl} target="_blank" rel="noopener noreferrer">
-          <h3 className="font-semibold text-white text-sm leading-snug hover:text-cyan-400 transition-colors line-clamp-2">
+          <h3 className="font-semibold text-[#1A1A1A] text-sm leading-snug hover:text-[#2D5986] transition-colors line-clamp-2">
             {truncate(video.title, 80)}
           </h3>
         </a>
 
         {/* Meta */}
-        <div className="mt-2.5 flex items-center gap-3 text-xs text-gray-500">
+        <div className="mt-3 flex items-center gap-3 text-xs text-[#5C5C5C] font-mono border-t border-[#DDE1E6] pt-2">
           {video.viewCount && (
             <span className="flex items-center gap-1">
-              <Eye className="w-3 h-3" />
+              <Eye className="w-3 h-3 text-[#858585]" />
               {formatNumber(video.viewCount)} views
             </span>
           )}
           {video.publishedAt && (
             <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
+              <Clock className="w-3 h-3 text-[#858585]" />
               {formatDate(video.publishedAt)}
             </span>
           )}

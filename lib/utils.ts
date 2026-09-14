@@ -50,37 +50,37 @@ export function getSourceLabel(source: string): string {
 
 export function getSourceColor(source: string): string {
   const colors: Record<string, string> = {
-    AMAZON: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-    REDDIT: 'bg-red-500/20 text-red-400 border-red-500/30',
-    YOUTUBE: 'bg-red-600/20 text-red-400 border-red-600/30',
-    EXPERT: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-    MANUAL: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+    AMAZON: 'bg-[#FFF7ED] text-[#9A3412] border-[#FDBA74]',
+    REDDIT: 'bg-[#FEF2F2] text-[#991B1B] border-[#FCA5A5]',
+    YOUTUBE: 'bg-[#FEF2F2] text-[#B91C1C] border-[#FECACA]',
+    EXPERT: 'bg-[#F0FDF4] text-[#166534] border-[#86EFAC]',
+    MANUAL: 'bg-[#EFF6FF] text-[#1E40AF] border-[#93C5FD]',
   };
-  return colors[source] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+  return colors[source] || 'bg-[#F3F4F6] text-[#374151] border-[#D1D5DB]';
 }
 
 export function getScoreColor(score: number): string {
-  if (score >= 9) return 'text-cyan-400';
-  if (score >= 7) return 'text-green-400';
-  if (score >= 5) return 'text-yellow-400';
-  return 'text-red-400';
+  if (score >= 8.5) return 'text-[#2A6B4A]';
+  if (score >= 7.0) return 'text-[#2D5986]';
+  if (score >= 5.0) return 'text-[#B45309]';
+  return 'text-[#B91C1C]';
 }
 
 export function getScoreBg(score: number): string {
-  if (score >= 9) return 'bg-cyan-500/20 border-cyan-500/30';
-  if (score >= 7) return 'bg-green-500/20 border-green-500/30';
-  if (score >= 5) return 'bg-yellow-500/20 border-yellow-500/30';
-  return 'bg-red-500/20 border-red-500/30';
+  if (score >= 8.5) return 'bg-[#EBF5EE] text-[#2A6B4A] border-[#C3E0CE]';
+  if (score >= 7.0) return 'bg-[#EEF4FA] text-[#2D5986] border-[#CBDDF0]';
+  if (score >= 5.0) return 'bg-[#FEF3C7] text-[#B45309] border-[#FDE68A]';
+  return 'bg-[#FEE2E2] text-[#B91C1C] border-[#FECACA]';
 }
 
 export function getVerdictColor(verdict: string): string {
   const colors: Record<string, string> = {
-    'Highly Recommended': 'text-cyan-400',
-    'Recommended': 'text-green-400',
-    'Mixed': 'text-yellow-400',
-    'Not Recommended': 'text-red-400',
+    'Highly Recommended': 'text-[#2A6B4A]',
+    'Recommended': 'text-[#2D5986]',
+    'Mixed': 'text-[#B45309]',
+    'Not Recommended': 'text-[#B91C1C]',
   };
-  return colors[verdict] || 'text-gray-400';
+  return colors[verdict] || 'text-[#1A1A1A]';
 }
 
 export function extractAsin(input: string): string | null {

@@ -36,7 +36,8 @@ export async function generateVerdictSummary(
     .map(r => `[Reddit] ${r.title ? r.title + ': ' : ''}${r.body}`)
     .join('\n---\n');
 
-  const prompt = `You are a professional tech reviewer at TechLens. Analyze these real user reviews for "${productTitle}" and generate an honest, balanced verdict.
+  const prompt = `You are a professional tech reviewer at GadgetLens. Analyze these real user reviews for "${productTitle}" and generate an honest, balanced verdict.
+Never use marketing clichés or prohibited filler phrases like "cutting-edge", "revolutionary", "game-changing", "in today's world", "look no further", "unleash", or "elevate your".
 
 === AMAZON REVIEWS ===
 ${amazonText}
@@ -47,15 +48,15 @@ ${redditText}
 Based ONLY on these real user opinions, generate a JSON response with this exact structure:
 {
   "summary": "A 3-sentence honest summary of what real users think. Mention both positives and negatives. Be direct and specific.",
-  "pros": ["Pro 1 (from real user feedback)", "Pro 2", "Pro 3", "Pro 4", "Pro 5"],
-  "cons": ["Con 1 (from real user feedback)", "Con 2", "Con 3", "Con 4", "Con 5"],
+  "pros": ["Pro 1 (from real user feedback)", "Pro 2", "Pro 3"],
+  "cons": ["Con 1 (from real user feedback)", "Con 2", "Con 3"],
   "score": 8.5,
   "verdict": "Recommended"
 }
 
 Rules:
 - summary must be based on what users actually said, not generic praise
-- pros and cons must be specific (not vague like "good quality")
+- pros and cons must be specific and balanced (at least 2 pros and at least 2 cons, never zero cons)
 - score is from 1-10 based on overall user sentiment
 - verdict must be exactly one of: "Highly Recommended", "Recommended", "Mixed", "Not Recommended"
 - Return ONLY valid JSON, no markdown code blocks

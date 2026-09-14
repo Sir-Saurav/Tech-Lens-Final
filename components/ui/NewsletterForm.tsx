@@ -4,37 +4,42 @@ import { useState } from 'react';
 
 export default function NewsletterForm() {
   const [email, setEmail] = useState('');
-  const [submitted, setSubmitted] = useState(false);
+  const [notice, setNotice] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleClick = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) setSubmitted(true);
+    if (email.trim()) {
+      setNotice(true);
+    }
   };
 
-  if (submitted) {
-    return (
-      <p className="text-cyan-400 font-medium">
-        ✓ You&apos;re subscribed! Watch your inbox for weekly picks.
-      </p>
-    );
-  }
-
   return (
-    <form className="flex gap-3 max-w-md mx-auto" onSubmit={handleSubmit}>
-      <input
-        type="email"
-        value={email}
-        onChange={e => setEmail(e.target.value)}
-        placeholder="your@email.com"
-        required
-        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 transition-colors"
-      />
-      <button
-        type="submit"
-        className="px-5 py-3 bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-sm rounded-xl transition-colors whitespace-nowrap"
-      >
-        Subscribe
-      </button>
-    </form>
+    <div className="max-w-md mx-auto">
+      {notice ? (
+        <div className="p-3 bg-[#EBF5EE] border border-[#C3E0CE] rounded text-xs text-[#2A6B4A] text-center font-medium">
+          ✓ Weekly dispatch program launches shortly. Bookmark GadgetLens or check our YouTube channels for direct alerts.
+        </div>
+      ) : (
+        <form className="flex flex-col sm:flex-row gap-2" onSubmit={handleClick}>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Enter your email address"
+            required
+            className="flex-1 bg-white border border-[#DDE1E6] rounded px-3.5 py-2 text-sm text-[#1A1A1A] placeholder-[#858585] focus:outline-none focus:border-[#2D5986]"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 bg-[#2D5986] hover:bg-[#224569] text-white font-semibold text-xs rounded transition-colors whitespace-nowrap uppercase tracking-wider"
+          >
+            Get Updates
+          </button>
+        </form>
+      )}
+      <p className="text-[11px] text-[#858585] mt-2 text-center">
+        Zero spam. No sponsored placements. Unsubscribe anytime.
+      </p>
+    </div>
   );
 }

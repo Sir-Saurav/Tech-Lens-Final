@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio';
 import type { ScrapedProduct, ScrapedReview, RedditPost } from '@/types';
 
 const SCRAPINGBEE_KEY = process.env.SCRAPINGBEE_API_KEY!;
-const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || 'techlens-21';
+const AFFILIATE_TAG = process.env.AMAZON_AFFILIATE_TAG || 'gadgetlens-21';
 
 // Base Amazon domain - works for .in (India) and .com (US)
 const AMAZON_BASE = 'https://www.amazon.in';
@@ -185,7 +185,7 @@ export async function scrapeRedditOpinions(productName: string): Promise<RedditP
     try {
       const url = `https://www.reddit.com/search.json?q=${encodeURIComponent(query)}&sort=top&limit=10&t=year`;
       const res = await axios.get(url, {
-        headers: { 'User-Agent': 'TechLens-Review-Bot/1.0' },
+        headers: { 'User-Agent': 'GadgetLens-Review-Bot/1.0' },
         timeout: 15_000,
       });
 

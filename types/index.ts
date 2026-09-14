@@ -23,11 +23,16 @@ export interface Product {
   verdictSummary?: string;
   verdictPros: string[];
   verdictCons: string[];
+  whoItIsFor?: string;
+  whoShouldSkip?: string;
   isFeatured: boolean;
   isPublished: boolean;
+  /** Tracks provenance of rating/reviewCount for schema auditability */
+  _dataSource?: string;
   createdAt: string;
   updatedAt: string;
 }
+
 
 export interface Review {
   id: string;

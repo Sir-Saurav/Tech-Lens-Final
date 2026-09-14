@@ -1,24 +1,25 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
+import { Video as VideoIcon, Tv } from 'lucide-react';
 import VideoCard from '@/components/ui/VideoCard';
-import type { Video } from '@/types';
+import { ALL_VIDEOS } from '@/lib/data';
 
 export const metadata: Metadata = {
-  title: 'Tech Review Videos | TechLens',
-  description: 'Watch in-depth tech product review videos from Gadget Verse, Tech Space, Gadget Bits, Gadget Adda, Tech Buddie, Tech States and more.',
+  title: 'Video Teardowns & Tests | GadgetLens',
+  description: 'Visual lab tests, camera sensor comparisons, and long-term durability teardowns from the GadgetLens channel network.',
+  alternates: {
+    canonical: 'https://gadgetlens.store/videos',
+  },
 };
 
-const ALL_CHANNELS = ['All', 'Gadget Verse', 'Tech Space', 'Gadget Bits', 'Gadget Adda', 'Tech Buddie', 'Tech States'];
-
-const MOCK_VIDEOS: Video[] = [
-  { id: '1', youtubeId: 'dQw4w9WgXcQ', title: 'iPhone 16 Pro Max Full Review – Is It Worth ₹1.35 Lakh?', channelName: 'Gadget Verse', channelId: '', thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg', publishedAt: '2025-02-01T00:00:00Z', viewCount: 245000, duration: '18:32', tags: [], isPublished: true, createdAt: new Date().toISOString() },
-  { id: '2', youtubeId: 'oHg5SJYRHA0', title: 'Samsung S25 Ultra vs iPhone 16 Pro Max – Which Should You Buy?', channelName: 'Tech Space', channelId: '', thumbnail: 'https://img.youtube.com/vi/oHg5SJYRHA0/maxresdefault.jpg', publishedAt: '2025-01-28T00:00:00Z', viewCount: 189000, duration: '22:14', tags: [], isPublished: true, createdAt: new Date().toISOString() },
-  { id: '3', youtubeId: 'y6120QOlsfU', title: 'Sony WH-1000XM5 – Best ANC Headphones of 2025?', channelName: 'Gadget Bits', channelId: '', thumbnail: 'https://img.youtube.com/vi/y6120QOlsfU/maxresdefault.jpg', publishedAt: '2025-01-25T00:00:00Z', viewCount: 98000, duration: '14:45', tags: [], isPublished: true, createdAt: new Date().toISOString() },
-  { id: '4', youtubeId: 'rokGy0huYEA', title: 'MacBook Pro M4 Pro – 2 Months Later – Honest Review', channelName: 'Gadget Adda', channelId: '', thumbnail: 'https://img.youtube.com/vi/rokGy0huYEA/maxresdefault.jpg', publishedAt: '2025-01-22T00:00:00Z', viewCount: 134000, duration: '19:08', tags: [], isPublished: true, createdAt: new Date().toISOString() },
-  { id: '5', youtubeId: '6_b6zVHhBt4', title: 'Top 5 Budget Phones Under ₹20,000 in 2025', channelName: 'Tech Buddie', channelId: '', thumbnail: 'https://img.youtube.com/vi/6_b6zVHhBt4/maxresdefault.jpg', publishedAt: '2025-01-18T00:00:00Z', viewCount: 67000, duration: '12:30', tags: [], isPublished: true, createdAt: new Date().toISOString() },
-  { id: '6', youtubeId: 'hY7m5jjJ9mM', title: 'Google Pixel 9 Pro Real World Camera Test in Nepal', channelName: 'Tech States', channelId: '', thumbnail: 'https://img.youtube.com/vi/hY7m5jjJ9mM/maxresdefault.jpg', publishedAt: '2025-01-15T00:00:00Z', viewCount: 52000, duration: '16:20', tags: [], isPublished: true, createdAt: new Date().toISOString() },
-  { id: '7', youtubeId: 'dQw4w9WgXcQ', title: 'OnePlus 13 Long Term Review – 3 Month Update', channelName: 'Gadget Verse', channelId: '', thumbnail: 'https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg', publishedAt: '2025-01-10T00:00:00Z', viewCount: 78000, duration: '15:44', tags: [], isPublished: true, createdAt: new Date().toISOString() },
-  { id: '8', youtubeId: 'oHg5SJYRHA0', title: 'Best Laptops Under ₹80,000 in 2025', channelName: 'Tech Space', channelId: '', thumbnail: 'https://img.youtube.com/vi/oHg5SJYRHA0/hqdefault.jpg', publishedAt: '2025-01-05T00:00:00Z', viewCount: 112000, duration: '20:55', tags: [], isPublished: true, createdAt: new Date().toISOString() },
-  { id: '9', youtubeId: 'y6120QOlsfU', title: 'Apple Watch Series 10 vs Galaxy Watch 7', channelName: 'Gadget Bits', channelId: '', thumbnail: 'https://img.youtube.com/vi/y6120QOlsfU/hqdefault.jpg', publishedAt: '2025-01-01T00:00:00Z', viewCount: 43000, duration: '11:28', tags: [], isPublished: true, createdAt: new Date().toISOString() },
+const CHANNELS = [
+  'All',
+  'Gadget Verse',
+  'Tech Space',
+  'Gadget Bits',
+  'Gadget Adda',
+  'Tech Buddie',
+  'Tech States',
 ];
 
 export default async function VideosPage({
@@ -30,40 +31,75 @@ export default async function VideosPage({
   const activeChannel = params.channel || 'All';
 
   const filtered = activeChannel === 'All'
-    ? MOCK_VIDEOS
-    : MOCK_VIDEOS.filter(v => v.channelName === activeChannel);
+    ? ALL_VIDEOS
+    : ALL_VIDEOS.filter((v) => v.channelName.toLowerCase() === activeChannel.toLowerCase());
 
   return (
-    <div className="pt-24 pb-20">
+    <div className="pt-28 pb-20 bg-[#F5F6F4] min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <p className="text-xs font-semibold text-red-400 uppercase tracking-widest mb-1">7 YouTube Channels</p>
-          <h1 className="text-3xl font-bold text-white">Review Videos</h1>
-          <p className="text-gray-400 mt-1">In-depth video reviews from our channels — watch before you buy</p>
+        {/* Editorial Header */}
+        <div className="border-b border-[#DDE1E6] pb-8 mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 font-mono text-xs text-[#2D5986] uppercase tracking-wider mb-2">
+              <VideoIcon className="w-3.5 h-3.5" />
+              <span>Broadcast Network</span>
+            </div>
+            <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#111827] tracking-tight">
+              Lab Video Teardowns
+            </h1>
+            <p className="text-sm sm:text-base text-[#4B5563] mt-2 max-w-2xl leading-relaxed">
+              Extended bench tests, acoustic samples, and side-by-side camera sensor captures produced across our video desk.
+            </p>
+          </div>
+
+          <Link
+            href="/channels"
+            className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-[#2D5986] bg-white px-3.5 py-2 rounded-lg border border-[#DDE1E6] hover:border-[#2D5986] transition-colors self-start md:self-auto"
+          >
+            <Tv className="w-3.5 h-3.5" />
+            <span>Channel Directory</span>
+          </Link>
         </div>
 
-        {/* Channel filter */}
-        <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2 mb-8">
-          {ALL_CHANNELS.map(ch => (
-            <a
-              key={ch}
-              href={ch === 'All' ? '/videos' : `/videos?channel=${encodeURIComponent(ch)}`}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
-                activeChannel === ch
-                  ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white border border-white/8'
-              }`}
+        {/* Channel Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-8 scrollbar-none">
+          {CHANNELS.map((ch) => {
+            const isActive = activeChannel.toLowerCase() === ch.toLowerCase();
+            return (
+              <Link
+                key={ch}
+                href={ch === 'All' ? '/videos' : `/videos?channel=${encodeURIComponent(ch)}`}
+                className={`font-mono text-xs px-3.5 py-2 rounded-lg whitespace-nowrap transition-colors border ${
+                  isActive
+                    ? 'bg-[#2D5986] text-white border-[#2D5986] font-semibold shadow-sm'
+                    : 'bg-white text-[#4B5563] border-[#DDE1E6] hover:border-[#2D5986] hover:text-[#111827]'
+                }`}
+              >
+                {ch}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Video Grid */}
+        {filtered.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filtered.map((video) => (
+              <VideoCard key={video.id} video={video} />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-white border border-[#DDE1E6] rounded-xl p-12 text-center max-w-md mx-auto my-12">
+            <p className="font-serif text-lg font-bold text-[#111827] mb-2">No videos found for this channel</p>
+            <p className="text-xs text-[#4B5563] mb-6">Explore the rest of our video desk catalog.</p>
+            <Link
+              href="/videos"
+              className="inline-flex items-center justify-center px-4 py-2 bg-[#2D5986] text-white text-xs font-semibold rounded-lg hover:bg-[#1f4061] transition-colors"
             >
-              {ch}
-            </a>
-          ))}
-        </div>
-
-        {/* Video grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filtered.map(v => <VideoCard key={v.id} video={v} />)}
-        </div>
+              Reset Filter
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

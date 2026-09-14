@@ -1,6 +1,6 @@
 /** @type {import('next-sitemap').IConfig} */
 const config = {
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://techlens.store',
+  siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://gadgetlens.store',
   generateRobotsTxt: true,
   changefreq: 'daily',
   priority: 0.7,
@@ -19,7 +19,7 @@ const config = {
       },
     ],
     additionalSitemaps: [
-      'https://techlens.store/sitemap.xml',
+      'https://gadgetlens.store/sitemap.xml',
     ],
   },
   transform: async (config, path) => {
