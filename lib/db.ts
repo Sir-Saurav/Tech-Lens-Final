@@ -5,11 +5,22 @@ let prismaClient: PrismaClient | undefined;
 
 function getPrismaClient(): PrismaClient {
   if (!prismaClient) {
-    prismaClient = globalForPrisma.prisma ?? new PrismaClient({
-      log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-    });
+    const dbUrl =
+      process.env.POSTGRES_PRISMA_URL ||
+      process.env.DATABASE_URL ||
+      process.env.POSTGRES_URL ||
+      process.env.POSTGRES_URL_NON_POOLING;
 
-    if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prismaClient;
+    prismaClient =
+      globalForPrisma.prisma ??
+      new PrismaClient({
+        datasources: dbUrl ? { db: { url: dbUrl } } : undefined,
+        log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+      });
+
+    if (process.env.NODE_ENV !== 'production') {
+      globalForPrisma.prisma = prismaClient;
+    }
   }
 
   return prismaClient;
@@ -22,3 +33,4 @@ export const prisma = new Proxy({} as PrismaClient, {
 });
 
 export default prisma;
+

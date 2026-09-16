@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import prisma from '@/lib/db';
-import { getVideoDetails, CHANNELS } from '@/lib/youtube';
-import { matchProductToVideo } from '@/lib/ai';
+import { CHANNELS } from '@/lib/youtube';
 
 function extractYoutubeId(input?: string): string {
   if (!input) return '';
@@ -12,6 +11,37 @@ function extractYoutubeId(input?: string): string {
   }
   const match = trimmed.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/i);
   return match ? match[1] : trimmed;
+}
+
+// Fast non-blocking keyword matching to associate video with a product
+function fastMatchProduct(products: Array<{ id: string; title: string; asin?: string }>, videoTitle: string, asin?: string): string | null {
+  if (asin) {
+    const direct = products.find(p => p.asin && p.asin.toLowerCase() === asin.toLowerCase());
+    if (direct) return direct.id;
+  }
+  const videoLower = videoTitle.toLowerCase();
+  for (const p of products) {
+    const words = p.title.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+    const matches = words.filter(w => videoLower.includes(w));
+    if (matches.length >= 2) return p.id;
+  }
+  return null;
+}
+
+// Retry database operation on transient connection hiccups
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 300): Promise<T> {
+  let lastError: any;
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries) {
+        await new Promise(res => setTimeout(res, delayMs * attempt));
+      }
+    }
+  }
+  throw lastError;
 }
 
 export async function GET() {
@@ -27,7 +57,7 @@ export async function GET() {
       tags: 'string[] (optional)',
       duration: 'string (e.g. 12:30, optional)',
       channelName: 'string (e.g. Gadget Verse)',
-      productAsin: 'string (optional, for linking to review)',
+      productAsin: 'string (optional)',
       webhookSecret: 'string',
     },
   });
@@ -35,17 +65,17 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    let body: any = {};
+    let rawBody: any;
     try {
-      body = await request.json();
+      rawBody = await request.json();
     } catch {
       return NextResponse.json(
-        { error: 'Invalid JSON payload. Please ensure Content-Type is application/json.' },
+        { error: 'Invalid JSON payload. Ensure Content-Type is application/json.' },
         { status: 400 }
       );
     }
 
-    // 1. Authentication check across multiple sources (body, headers, query params)
+    // 1. Authentication check
     const validSecret =
       process.env.GADGETLENS_WEBHOOK_SECRET ||
       process.env.TECHLENS_WEBHOOK_SECRET ||
@@ -59,9 +89,7 @@ export async function POST(request: NextRequest) {
     const querySecret = request.nextUrl.searchParams.get('secret');
 
     const providedSecret =
-      body.webhookSecret ||
-      body.secret ||
-      body.token ||
+      (Array.isArray(rawBody) ? null : rawBody.webhookSecret || rawBody.secret || rawBody.token) ||
       headerSecret ||
       querySecret;
 
@@ -75,168 +103,128 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Extract and sanitize video parameters
-    const rawId = body.youtubeId || body.videoId || body.id || body.url || body.videoUrl || body.youtubeUrl;
-    const youtubeId = extractYoutubeId(rawId);
-    const title = body.title?.trim();
-    const channelName = body.channelName?.trim() || 'GadgetLens';
-    const productAsin = body.productAsin?.trim() || body.asin?.trim();
+    // Support both single item and array batch payloads
+    const items = Array.isArray(rawBody) ? rawBody : [rawBody];
+    const results = [];
 
-    if (!youtubeId) {
-      return NextResponse.json(
-        {
-          error: 'Missing video ID or URL.',
-          received: { rawId, title, channelName },
-          help: 'Provide youtubeId (or youtubeUrl) in your JSON payload.',
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!title && !process.env.YOUTUBE_API_KEY) {
-      return NextResponse.json(
-        {
-          error: 'Missing video title, and no YOUTUBE_API_KEY is configured for automated lookup.',
-          help: 'Provide "title" in the payload or set YOUTUBE_API_KEY in environment variables.',
-        },
-        { status: 400 }
-      );
-    }
-
-    // 3. Check for existing video
-    let existing = null;
+    // Pre-fetch products once in memory for fast lookup
+    let cachedProducts: Array<{ id: string; title: string; asin: string; slug: string }> = [];
     try {
-      existing = await prisma.video.findUnique({ where: { youtubeId } });
-    } catch (dbErr) {
-      console.error('[webhook/video] DB error checking existing video:', dbErr);
-      return NextResponse.json(
-        {
-          error: 'Database connection failed while querying videos table.',
-          details: dbErr instanceof Error ? dbErr.message : String(dbErr),
-          help: 'Ensure your Postgres database is connected and prisma db push / migrations have been applied.',
-        },
-        { status: 500 }
+      cachedProducts = await withRetry(() =>
+        prisma.product.findMany({
+          take: 50,
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, title: true, asin: true, slug: true },
+        })
       );
+    } catch (e) {
+      console.warn('[webhook/video] Product pre-fetch skipped:', e);
     }
 
-    if (existing) {
-      return NextResponse.json({
+    for (const body of items) {
+      const rawId = body.youtubeId || body.videoId || body.id || body.url || body.videoUrl || body.youtubeUrl;
+      const youtubeId = extractYoutubeId(rawId);
+      const title = (body.title || `Video ${youtubeId}`)?.trim();
+      const channelName = body.channelName?.trim() || 'GadgetLens';
+      const productAsin = body.productAsin?.trim() || body.asin?.trim();
+
+      if (!youtubeId) {
+        results.push({ error: 'Missing youtubeId or url', item: body });
+        continue;
+      }
+
+      const channelId = body.channelId || CHANNELS[channelName] || '';
+      const matchedProductId = fastMatchProduct(cachedProducts, title, productAsin);
+
+      const finalThumbnail =
+        body.thumbnail ||
+        body.thumbnailUrl ||
+        `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
+
+      const finalDescription = body.description || '';
+      const finalTags = Array.isArray(body.tags)
+        ? body.tags
+        : typeof body.tags === 'string'
+        ? body.tags.split(',').map((t: string) => t.trim())
+        : [];
+      const finalDuration = body.duration || '';
+
+      const publishedAt = body.publishedAt ? new Date(body.publishedAt) : new Date();
+
+      // Upsert directly to prevent concurrency race conditions
+      const video = await withRetry(() =>
+        prisma.video.upsert({
+          where: { youtubeId },
+          update: {
+            title,
+            description: finalDescription || undefined,
+            thumbnail: finalThumbnail,
+            channelName,
+            channelId: channelId || undefined,
+            duration: finalDuration || undefined,
+            tags: finalTags.length > 0 ? finalTags : undefined,
+            productId: matchedProductId ?? undefined,
+            productAsin: productAsin ?? undefined,
+            viewCount: body.viewCount !== undefined ? Number(body.viewCount) : undefined,
+            likeCount: body.likeCount !== undefined ? Number(body.likeCount) : undefined,
+            updatedAt: new Date(),
+          },
+          create: {
+            youtubeId,
+            title,
+            description: finalDescription,
+            thumbnail: finalThumbnail,
+            channelName,
+            channelId,
+            publishedAt,
+            viewCount: body.viewCount ? Number(body.viewCount) : 0,
+            likeCount: body.likeCount ? Number(body.likeCount) : 0,
+            duration: finalDuration,
+            productId: matchedProductId,
+            productAsin: productAsin ?? null,
+            tags: finalTags,
+            isPublished: true,
+          },
+        })
+      );
+
+      results.push({
         success: true,
-        message: 'Video already exists in database',
-        videoId: existing.id,
-        youtubeId: existing.youtubeId,
+        videoId: video.id,
+        youtubeId: video.youtubeId,
+        title: video.title,
+        channelName: video.channelName,
       });
     }
 
-    // 4. Fetch supplemental details from YouTube API if key is available
-    let ytDetails = null;
-    if (process.env.YOUTUBE_API_KEY) {
-      try {
-        ytDetails = await getVideoDetails(youtubeId);
-      } catch (ytErr) {
-        console.warn('[webhook/video] YouTube API fetch warning:', ytErr);
-      }
-    }
-
-    const channelId =
-      body.channelId ||
-      CHANNELS[channelName] ||
-      ytDetails?.channelId ||
-      '';
-
-    // 5. Match to product catalog if possible
-    let productId: string | null = null;
-    if (productAsin) {
-      const product = await prisma.product.findUnique({ where: { asin: productAsin } });
-      productId = product?.id ?? null;
-    } else if (title) {
-      try {
-        const recentProducts = await prisma.product.findMany({
-          take: 30,
-          orderBy: { createdAt: 'desc' },
-          select: { id: true, title: true },
-        });
-        for (const product of recentProducts) {
-          const isMatch = await matchProductToVideo(product.title, title);
-          if (isMatch) {
-            productId = product.id;
-            break;
-          }
-        }
-      } catch (matchErr) {
-        console.warn('[webhook/video] Product matching warning:', matchErr);
-      }
-    }
-
-    const finalThumbnail =
-      body.thumbnail ||
-      body.thumbnailUrl ||
-      ytDetails?.thumbnail ||
-      `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`;
-
-    const finalDescription = body.description || ytDetails?.description || '';
-    const finalTags = Array.isArray(body.tags)
-      ? body.tags
-      : typeof body.tags === 'string'
-      ? body.tags.split(',').map((t: string) => t.trim())
-      : ytDetails?.tags || [];
-    const finalDuration = body.duration || ytDetails?.duration || '';
-
-    // 6. Save video record to database
-    const video = await prisma.video.create({
-      data: {
-        youtubeId,
-        title: title || ytDetails?.title || `Video ${youtubeId}`,
-        description: finalDescription,
-        thumbnail: finalThumbnail,
-        channelName,
-        channelId,
-        publishedAt: body.publishedAt
-          ? new Date(body.publishedAt)
-          : ytDetails?.publishedAt
-          ? new Date(ytDetails.publishedAt)
-          : new Date(),
-        viewCount: body.viewCount || ytDetails?.viewCount || 0,
-        likeCount: body.likeCount || ytDetails?.likeCount || 0,
-        duration: finalDuration,
-        productId,
-        productAsin: productAsin ?? null,
-        tags: finalTags,
-        isPublished: true,
-      },
-    });
-
-    // 7. Instant on-demand revalidation for SEO and UI
+    // Trigger instant revalidation (non-blocking)
     try {
       revalidatePath('/');
       revalidatePath('/videos');
       revalidatePath('/channels');
-      if (productId) {
-        const p = await prisma.product.findUnique({
-          where: { id: productId },
-          select: { slug: true },
-        });
-        if (p) revalidatePath(`/products/${p.slug}`);
-      }
-    } catch (revalErr) {
-      console.warn('[webhook/video] Revalidation warning:', revalErr);
+    } catch {}
+
+    if (results.length === 1) {
+      return NextResponse.json({
+        success: true,
+        message: 'Video published successfully',
+        ...results[0],
+      });
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Video, thumbnail, and SEO metadata published successfully',
-      videoId: video.id,
-      youtubeId: video.youtubeId,
-      channelName: video.channelName,
-      title: video.title,
+      processed: results.length,
+      results,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown server error';
-    console.error('[webhook/video] Unexpected error:', message);
+    console.error('[webhook/video] Error:', message);
     return NextResponse.json(
       {
-        error: message,
-        help: 'Verify your JSON body and ensure database credentials are configured in Vercel environment variables.',
+        error: 'Database connection failed while processing videos.',
+        details: message,
+        help: 'Ensure your Postgres database is accessible and connection pool limits are sufficient.',
       },
       { status: 500 }
     );
